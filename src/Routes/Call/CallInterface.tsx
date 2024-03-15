@@ -37,7 +37,7 @@ const CallInterface = (props: Props) => {
         connectReg()
         isRegistered.current = true
         if (socket.current) return
-        socket.current = new WebSocket(`ws://localhost:8000/ws/${channel}/${userId}`)
+        socket.current = new WebSocket(`ws://172.20.10.2:8000/ws/${channel}/${userId}`)
         socket.current.addEventListener('open', () => {
             console.log("Connected to scoket")
         })
@@ -47,12 +47,21 @@ const CallInterface = (props: Props) => {
             if (data.body.length === 0) return
             setMessages(t => {
                 const arr = [...t]
-                if (t.findIndex((msg) => msg.id === data.id) !== -1) {
-                    if (data.suspicion === true) {
-                        setSuspicionModalOpen(true)
-                    }
-                    arr[arr.indexOf(data.id)].suspicion = data.suspicion
-                    arr[arr.indexOf(data.id)].AIComments = data.AIComments
+                let index = t.findIndex((msg) => msg.id === data.id)
+                if (index !== -1) {
+
+                    // if (data.suspicion === true) {
+                    //     setSuspicionModalOpen(true)
+                    // }
+                    // arr[arr.indexOf(data.id)].suspicion = data.suspicion
+                    arr[index].AIComments = data.AIComments
+                    const jsonResponse = JSON.parse(data.AIComments)
+                    console.log(jsonResponse)
+                    // temp0.reduce((a, e) => (e.suspicious || e.Suspicious) || a, "")
+                    const sus = jsonResponse.reduce((a, e) => (e.suspicious || e.Suspicious) || a, "")
+                    const isSus = sus != ""
+                    arr[index].suspicion = isSus
+                    setSuspicionModalOpen(isSus)
                     return arr
                 } else {
                     return [...t, data]
@@ -82,7 +91,7 @@ const CallInterface = (props: Props) => {
 
         const formData = new FormData()
         formData.append('file', blob)
-        const res = await fetch(`http://localhost:8000/post/${channel}/${userId}`, {
+        const res = await fetch(`http://172.20.10.2:8000/post/${channel}/${userId}`, {
             method: 'POST',
             body: formData
         })
@@ -188,7 +197,7 @@ const CallInterface = (props: Props) => {
                         <h2 className='text-xl'>Call Transcript</h2>
 
                         <ul className='max-h-full py-10 overflow-scroll'>
-                            {messages.map((msg, i) =>
+                            {(messages ?? []).map((msg, i) =>
                                 <Message msg={msg} key={i} />)}
                         </ul>
                     </div>
