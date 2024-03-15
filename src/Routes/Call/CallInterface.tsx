@@ -4,6 +4,7 @@ import { IMediaRecorder, MediaRecorder, register } from "extendable-media-record
 import { connect } from 'extendable-media-recorder-wav-encoder'
 import TopNav from '../../components/TopNav/TopNav'
 import Message from '../../components/Message/Message'
+import SuspicionModal from '../../components/SuspicionModal'
 type Props = {}
 
 const silenceThreshold = 0.01
@@ -12,6 +13,8 @@ const CallInterface = (props: Props) => {
     const { channel, userId } = useParams()
     const socket = useRef<WebSocket | null>()
 
+
+    const [suspicionModalOpen, setSuspicionModalOpen] = useState(false)
     const [recording, setRecording] = useState(false)
     const mediaStream = useRef<MediaStream | null>(null)
     const mediaRecorder = useRef<IMediaRecorder | null>(null)
@@ -40,9 +43,22 @@ const CallInterface = (props: Props) => {
         })
         socket.current.addEventListener('message', (msg) => {
             const data = JSON.parse(msg.data)
+            console.log(data)
             if (data.body.length === 0) return
-            setMessages(t => [...t, data])
-            console.log("message: ", data)
+            setMessages(t => {
+                const arr = [...t]
+                if (t.findIndex((msg) => msg.id === data.id) !== -1) {
+                    if (data.suspicion === true) {
+                        setSuspicionModalOpen(true)
+                    }
+                    arr[arr.indexOf(data.id)].suspicion = data.suspicion
+                    arr[arr.indexOf(data.id)].AIComments = data.AIComments
+                    return arr
+                } else {
+                    return [...t, data]
+                }
+
+            })
         })
     }, [])
 
@@ -71,7 +87,6 @@ const CallInterface = (props: Props) => {
             body: formData
         })
         const data = await res.json()
-        console.log(data.transcript)
         mediaRecorder.current?.start()
     }
 
@@ -151,8 +166,10 @@ const CallInterface = (props: Props) => {
         <div className='flex flex-col'>
             <TopNav />
             <div className='flex h-[80vh]'>
-                <div className='h-full m-5 bg-bg-grey w-[1000px] flex flex-col items-center justify-center'>
-
+                <div className='h-full m-5 bg-bg-grey w-[1000px] flex flex-col items-center justify-center relative'>
+                    {suspicionModalOpen && <SuspicionModal onClose={() => {
+                        setSuspicionModalOpen(false)
+                    }} />}
                     <img src={`/avatar_1.png`} alt="" />
                     <h1>{userId == "1" ? "Sayar VIT" : "Deepam"}</h1>
 
@@ -166,14 +183,18 @@ const CallInterface = (props: Props) => {
                         }
                     }}>{recording ? "Stop" : "Start"} Recording</button>
                 </div>
-                <div className='flex-1 h-full p-5 m-5 rounded-md bg-bg-grey'>
+                <div className='flex flex-col flex-1 mx-5 mt-5'>
+                    <div className='flex flex-col flex-[0.6] w-full p-5 mb-5 rounded-md bg-bg-grey'>
+                        <h2 className='text-xl'>Call Transcript</h2>
 
-                    <h2 className='text-xl'>Call Transcript</h2>
+                        <ul className='max-h-full py-10 overflow-scroll'>
+                            {messages.map((msg, i) =>
+                                <Message msg={msg} key={i} />)}
+                        </ul>
+                    </div>
+                    <div className='flex-[0.4] mt-5 bg-bg-grey'>
 
-                    <ul className='max-h-full py-10 overflow-scroll'>
-                        {messages.map((msg, i) =>
-                            <Message msg={msg} />)}
-                    </ul>
+                    </div>
                 </div>
             </div>
         </div >
