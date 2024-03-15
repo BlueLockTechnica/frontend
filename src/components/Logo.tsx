@@ -5,7 +5,7 @@ type Props = {}
 const Logo = (props: Props) => {
     return (
         <div>
-            <img src="logo.svg" alt="" />
+            <img src="/logo.svg" alt="" />
         </div>
     )
 }

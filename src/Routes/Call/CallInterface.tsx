@@ -2,10 +2,12 @@ import { useParams } from 'react-router-dom'
 import { useEffect, useRef, useState } from "react"
 import { IMediaRecorder, MediaRecorder, register } from "extendable-media-recorder"
 import { connect } from 'extendable-media-recorder-wav-encoder'
+import TopNav from '../../components/TopNav/TopNav'
+import Message from '../../components/Message/Message'
 type Props = {}
 
 const silenceThreshold = 0.01
-const silenceDetectionTime = 4
+const silenceDetectionTime = 3
 const CallInterface = (props: Props) => {
     const { channel, userId } = useParams()
     const socket = useRef<WebSocket | null>()
@@ -32,7 +34,7 @@ const CallInterface = (props: Props) => {
         connectReg()
         isRegistered.current = true
         if (socket.current) return
-        socket.current = new WebSocket(`wss://287f-136-233-9-98.ngrok-free.app/ws/${channel}/${userId}`)
+        socket.current = new WebSocket(`ws://localhost:8000/ws/${channel}/${userId}`)
         socket.current.addEventListener('open', () => {
             console.log("Connected to scoket")
         })
@@ -40,7 +42,7 @@ const CallInterface = (props: Props) => {
             const data = JSON.parse(msg.data)
             if (data.body.length === 0) return
             setMessages(t => [...t, data])
-            console.log("message: ", data.sender_id)
+            console.log("message: ", data)
         })
     }, [])
 
@@ -64,7 +66,7 @@ const CallInterface = (props: Props) => {
 
         const formData = new FormData()
         formData.append('file', blob)
-        const res = await fetch(`https://287f-136-233-9-98.ngrok-free.app/post/${channel}/${userId}`, {
+        const res = await fetch(`http://localhost:8000/post/${channel}/${userId}`, {
             method: 'POST',
             body: formData
         })
@@ -146,23 +148,35 @@ const CallInterface = (props: Props) => {
 
 
     return (
-        <div className='flex h-[100vh]'>
-            <div className='flex-1 h-full m-2 bg-white'>
-                <button className='text-black' onClick={() => {
-                    if (recording) {
-                        stopRecording()
-                    } else {
-                        startRecording()
-                    }
-                }}>{recording ? "Stop" : "Start"} Recording</button>
-                <ul>
-                    {messages.map(msg =>
-                        <div className='flex w-full'>
-                            <li className={`justify-end text-black text-wrap ${msg.sender_id == userId ? "justify-start text-left" : "justify-end text-right"}`}>{"Sender " + msg.sender_id} - {msg.body}</li>
-                        </div>)}
-                </ul>
+        <div className='flex flex-col'>
+            <TopNav />
+            <div className='flex h-[80vh]'>
+                <div className='h-full m-5 bg-bg-grey w-[1000px] flex flex-col items-center justify-center'>
+
+                    <img src={`/avatar_1.png`} alt="" />
+                    <h1>{userId == "1" ? "Sayar VIT" : "Deepam"}</h1>
+
+                    <button className='p-2 text-white bg-red-600 rounded-md' onClick={() => {
+
+
+                        if (recording) {
+                            stopRecording()
+                        } else {
+                            startRecording()
+                        }
+                    }}>{recording ? "Stop" : "Start"} Recording</button>
+                </div>
+                <div className='flex-1 h-full p-5 m-5 rounded-md bg-bg-grey'>
+
+                    <h2 className='text-xl'>Call Transcript</h2>
+
+                    <ul className='max-h-full py-10 overflow-scroll'>
+                        {messages.map((msg, i) =>
+                            <Message msg={msg} />)}
+                    </ul>
+                </div>
             </div>
-        </div>
+        </div >
     )
 
 }
