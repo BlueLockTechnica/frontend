@@ -12,7 +12,9 @@ function Layout({ children, page }: Props) {
         <TopNav />
         <div className='flex flex-1'>
             <SideNav selected={page} />
-            {children}
+            <div className='flex-1'>
+                {children}
+            </div>
         </div>
     </div>
 }

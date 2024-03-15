@@ -6,11 +6,16 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import Dashboard from './Routes/Dashboard/Dashboard';
+import CallInterface from './Routes/Call/CallInterface';
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: <Dashboard />
+  },
+  {
+    path: '/call/:channel/:userId',
+    element: <CallInterface />
   }
 ])
 

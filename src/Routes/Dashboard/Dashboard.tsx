@@ -7,7 +7,7 @@ type Props = {}
 const Dashboard = (props: Props) => {
     return (
         <Layout page='Dashboard'>
-            <h1 className='text-3xl'>Call Reports</h1>
+            <h1 className='mb-5 text-3xl'>Call Reports</h1>
             <DashboardCards />
         </Layout>
     )
