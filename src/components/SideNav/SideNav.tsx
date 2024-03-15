@@ -26,7 +26,7 @@ const navLinks = [
 
 const SideNav = ({ selected }: Props) => {
     return (
-        <div className='bg-bg-grey h-full p-5 rounded-md flex-[0.15] mr-5 mb-5 flex flex-col'>
+        <div className='bg-bg-grey h-full p-5 rounded-md flex-[0.15] mr-5 mb-5 flex flex-col justify-between'>
             <div>
                 <p>Menu</p>
                 <nav className='my-2'>
@@ -42,8 +42,8 @@ const SideNav = ({ selected }: Props) => {
                     </ul>
                 </nav>
             </div>
-            <div>
-                <button>Logout</button>
+            <div className='p-5 text-lg'>
+                <button className='bg-none text-red-700'>Logout</button>
             </div>
         </div >
     )
