@@ -25,6 +25,7 @@ const CallInterface = (props: Props) => {
     const [isSilent, setIsSilent] = useState(false)
     const audioStreamSource = useRef<MediaStreamAudioSourceNode | null>(null)
     const [messages, setMessages] = useState<any[]>([])
+    const [issues, setIssues] = useState<any[]>([])
     const isRegistered = useRef<boolean>(false)
     const frameNum = useRef(0)
 
@@ -32,6 +33,11 @@ const CallInterface = (props: Props) => {
         await register(await connect())
 
     }
+
+    useEffect(() => {
+        if (issues.length === 0) return
+        setSuspicionModalOpen(true)
+    }, [issues.length])
 
     useEffect(() => {
         connectReg()
@@ -44,21 +50,32 @@ const CallInterface = (props: Props) => {
         socket.current.addEventListener('message', (msg) => {
             const data = JSON.parse(msg.data)
             console.log(data)
-            if (data.body.length === 0) return
-            setMessages(t => {
-                const arr = [...t]
-                if (t.findIndex((msg) => msg.id === data.id) !== -1) {
-                    if (data.suspicion === true) {
-                        setSuspicionModalOpen(true)
-                    }
-                    arr[arr.indexOf(data.id)].suspicion = data.suspicion
-                    arr[arr.indexOf(data.id)].AIComments = data.AIComments
-                    return arr
-                } else {
-                    return [...t, data]
-                }
+            console.log(data.body)
+            setMessages(prev => {
+                const index = prev.findIndex(m => m.id === data.id)
+                if (index !== -1) {
+                    const comments = JSON.parse(data.AIComments)
+                    const hasSuspicion = comments.find((c: any) => !!c.suspicion)
 
+                    prev[index].suspicion = hasSuspicion
+                    console.log(comments)
+
+                    const issueArr: any[] = []
+                    comments.forEach((c: any) => {
+                        if (!c.task) {
+                            issueArr.push(c)
+                        }
+                    })
+
+                    setIssues(iss => [...iss, ...issueArr])
+
+                    return prev
+                }
+                return [...prev, { id: data.id, body: data.body, username: data.username }]
             })
+            console.log(typeof data.id)
+            console.log(messages)
+
         })
     }, [])
 
