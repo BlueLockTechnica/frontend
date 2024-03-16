@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useEffect, useRef, useState } from "react"
 import { IMediaRecorder, MediaRecorder, register } from "extendable-media-recorder"
 import { connect } from 'extendable-media-recorder-wav-encoder'
@@ -13,7 +13,7 @@ const CallInterface = (props: Props) => {
     const { channel, userId } = useParams()
     const socket = useRef<WebSocket | null>()
 
-
+    const [callEnded, setCallEnded] = useState(false)
     const [suspicionModalOpen, setSuspicionModalOpen] = useState(false)
     const [recording, setRecording] = useState(false)
     const mediaStream = useRef<MediaStream | null>(null)
@@ -37,7 +37,7 @@ const CallInterface = (props: Props) => {
         connectReg()
         isRegistered.current = true
         if (socket.current) return
-        socket.current = new WebSocket(`ws://${window.location.host}/ws/${channel}/${userId}`)
+        socket.current = new WebSocket(`ws://localhost:8000/ws/${channel}/${userId}`)
         socket.current.addEventListener('open', () => {
             console.log("Connected to scoket")
         })
@@ -58,12 +58,13 @@ const CallInterface = (props: Props) => {
                     const jsonResponse = JSON.parse(data.AIComments)
                     console.log(jsonResponse)
                     // temp0.reduce((a, e) => (e.suspicious || e.Suspicious) || a, "")
-                    const sus = jsonResponse.reduce((a, e) => (e.suspicious || e.Suspicious) || a, "")
+                    const sus = jsonResponse.reduce((a: any, e: any) => (e.suspicious || e.Suspicious || e['THREAT']) || a, "")
                     const isSus = sus != ""
                     arr[index].suspicion = isSus
-                    arr[index].incorrect = jsonResponse.reduce((a, e) => (e.incorrect || e.Incorrect) || a, "") != ""
-                    arr[index].correct = jsonResponse.reduce((a, e) => (e.correct || e.Correct) || a, "") != ""
-                    arr[index].inconsistency = jsonResponse.reduce((a, e) => (e.consistency || e.Consistency) || a, "") != ""
+                    arr[index].incorrect = jsonResponse.reduce((a: any, e: any) => (e.incorrect || e.Incorrect) || a, "") != ""
+                    arr[index].correct = jsonResponse.reduce((a: any, e: any) => (e.correct || e.Correct) || a, "") != ""
+                    arr[index].inconsistency = jsonResponse.reduce((a: any, e: any) => (e.consistency || e.Consistency) || a, "") != ""
+
                     setSuspicionModalOpen(isSus)
                     return arr
                 } else {
@@ -94,7 +95,7 @@ const CallInterface = (props: Props) => {
 
         const formData = new FormData()
         formData.append('file', blob)
-        const res = await fetch(`/post/${channel}/${userId}`, {
+        const res = await fetch(`http://localhost:8000/post/${channel}/${userId}`, {
             method: 'POST',
             body: formData
         })
@@ -173,6 +174,19 @@ const CallInterface = (props: Props) => {
         }
     }
 
+    const endCall = () => {
+        if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+            mediaRecorder.current.stop();
+        }
+        if (mediaStream.current) {
+            mediaStream.current.getTracks().forEach((track) => {
+                track.stop();
+            });
+        }
+        socket.current?.close()
+        setCallEnded(true)
+    }
+
 
     return (
         <div className='flex flex-col'>
@@ -183,20 +197,31 @@ const CallInterface = (props: Props) => {
                         setSuspicionModalOpen(false)
                     }} />}
                     <img src={`/avatar_1.png`} alt="" />
-                    <h1>{userId == "1" ? "Sayar VIT" : "Deepam"}</h1>
+                    <h1 className='text-xl'>{userId == "1" ? "Sayar VIT" : "Deepam"}</h1>
+                    {!callEnded ? <div className='flex mt-5'>
+                        <button className={`p-5 m-5 text-white ${recording ? "bg-slate-500" : "bg-red-400"} rounded-full`} onClick={() => {
+                            if (recording) {
+                                stopRecording()
+                            } else {
+                                startRecording()
+                            }
+                        }}><img src="/mute.svg" alt="" /></button>
+                        <button className='p-5 m-5 text-white bg-red-600 rounded-full' onClick={() => {
+                            endCall()
+                        }}>
+                            <img src="/endcall.svg" alt="" />
+                        </button>
+                    </div> :
+                        <div className='m-5'>
+                            <Link to={`/report/${channel}`} className='flex items-center py-5 text-2xl text-white rounded-full px-9 bg-btn-primary hover:text-white'>
+                                <img src="/sparkle.svg" alt="" />
+                                <p>Generate Call Report</p>
+                            </Link>
+                        </div>}
 
-                    <button className='p-2 text-white bg-red-600 rounded-md' onClick={() => {
-
-
-                        if (recording) {
-                            stopRecording()
-                        } else {
-                            startRecording()
-                        }
-                    }}>{recording ? "Stop" : "Start"} Recording</button>
                 </div>
                 <div className='flex flex-col flex-1 mx-5 mt-5'>
-                    <div className='flex flex-col flex-[0.6] w-full p-5 mb-5 rounded-md bg-bg-grey'>
+                    <div className='flex flex-col h-[1000px] w-full p-5 rounded-md bg-bg-grey'>
                         <h2 className='text-xl'>Call Transcript</h2>
 
                         <ul className='max-h-full py-10 overflow-scroll'>
@@ -204,9 +229,12 @@ const CallInterface = (props: Props) => {
                                 <Message msg={msg} key={i} />)}
                         </ul>
                     </div>
-                    <div className='flex-[0.4] mt-5 bg-bg-grey'>
-
-                    </div>
+                    {/* <div className='flex-[0.4] mt-5 bg-bg-grey'>
+                        <h2 className='p-5 text-xl'>Suspicion Report</h2>
+                        <ul className='max-h-full py-10 overflow-scroll'>
+                            {suspicions.map((s, i) => <li key={i} className='p-5'>{s.title}: {s.text}</li>)}
+                        </ul>
+                    </div> */}
                 </div>
             </div>
         </div >

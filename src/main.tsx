@@ -7,6 +7,7 @@ import {
 } from "react-router-dom";
 import Dashboard from './Routes/Dashboard/Dashboard';
 import CallInterface from './Routes/Call/CallInterface';
+import CallReport from './Routes/Call/CallReport';
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,10 @@ const router = createBrowserRouter([
   {
     path: '/call/:channel/:userId',
     element: <CallInterface />
+  },
+  {
+    path: '/report/:channel',
+    element: <CallReport />
   }
 ])
 
