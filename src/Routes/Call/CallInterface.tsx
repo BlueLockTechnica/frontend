@@ -37,7 +37,7 @@ const CallInterface = (props: Props) => {
         connectReg()
         isRegistered.current = true
         if (socket.current) return
-        socket.current = new WebSocket(`ws://172.20.10.2:8000/ws/${channel}/${userId}`)
+        socket.current = new WebSocket(`ws://${window.location.host}/ws/${channel}/${userId}`)
         socket.current.addEventListener('open', () => {
             console.log("Connected to scoket")
         })
@@ -61,6 +61,9 @@ const CallInterface = (props: Props) => {
                     const sus = jsonResponse.reduce((a, e) => (e.suspicious || e.Suspicious) || a, "")
                     const isSus = sus != ""
                     arr[index].suspicion = isSus
+                    arr[index].incorrect = jsonResponse.reduce((a, e) => (e.incorrect || e.Incorrect) || a, "") != ""
+                    arr[index].correct = jsonResponse.reduce((a, e) => (e.correct || e.Correct) || a, "") != ""
+                    arr[index].inconsistency = jsonResponse.reduce((a, e) => (e.consistency || e.Consistency) || a, "") != ""
                     setSuspicionModalOpen(isSus)
                     return arr
                 } else {
@@ -91,7 +94,7 @@ const CallInterface = (props: Props) => {
 
         const formData = new FormData()
         formData.append('file', blob)
-        const res = await fetch(`http://172.20.10.2:8000/post/${channel}/${userId}`, {
+        const res = await fetch(`/post/${channel}/${userId}`, {
             method: 'POST',
             body: formData
         })
